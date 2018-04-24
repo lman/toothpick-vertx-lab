@@ -1,0 +1,75 @@
+plugins {
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '2.0.2'
+    id "net.ltgt.apt-idea" version "0.15"
+}
+
+group 'vertx'
+version '1.0'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+version = '0.0.1'
+mainClassName = 'com.vertx.toothpick.App'
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+configurations {
+    annotationProcessor
+}
+
+def vertxVersion = '3.5.1'
+def rxjavaVersion = '2.1.1'
+def toothpickVersion = '1.1.2'
+
+def mainVerticleName = 'com.vertx.toothpick.MainVerticle'
+def watchForChange = 'src/**/*'
+def doOnChange = './gradlew classes'
+
+dependencies {
+    compile "io.vertx:vertx-core:$vertxVersion"
+    compile "io.vertx:vertx-web:$vertxVersion"
+    compile "io.vertx:vertx-web-client:$vertxVersion"
+    compile "io.reactivex.rxjava2:rxjava:$rxjavaVersion"
+    compile "io.vertx:vertx-rx-java2:$vertxVersion"
+    compile "io.vertx:vertx-mysql-postgresql-client:$vertxVersion"
+    compile 'com.github.akarnokd:rxjava2-extensions:0.18.8'
+
+    testCompile "io.vertx:vertx-unit:$vertxVersion"
+    testCompile 'org.easymock:easymock:3.5.1'
+
+    compile 'com.jakewharton.rxrelay2:rxrelay:2.0.0'
+
+    annotationProcessor "com.github.stephanenicolas.toothpick:toothpick-compiler:$toothpickVersion"
+    compile "com.github.stephanenicolas.toothpick:toothpick-runtime:$toothpickVersion"
+    testCompile "com.github.stephanenicolas.toothpick:toothpick-testing:$toothpickVersion"
+
+    testCompile "junit:junit:4.12"
+    testCompile "io.vertx:vertx-unit:$vertxVersion"
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += [ "-Atoothpick_registry_package_name=com.vertx.toothpick" ]
+}
+
+shadowJar {
+    classifier = 'fat'
+//    manifest {
+//        attributes "Main-Verticle": mainVerticleName
+//    }
+    mergeServiceFiles {
+        include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
+    }
+}
+
+run {
+    args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.5.1'
+}
+
